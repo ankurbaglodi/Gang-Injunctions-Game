@@ -91,7 +91,14 @@ def construstTree(root):
     depth = 1
     parent = (root)
     currentPlayer = player
-    for i in range (depth,depthOfPlay+1):
+    queue = []
+    queue.append(parent)
+    # for i in range (depth,depthOfPlay+1):
+    while len(queue) != 0:
+        top = queue[0]
+        queue.pop(0)
+        if top.depth >= depthOfPlay:
+            break
         #1) Parse through the current board
         #2) Check the current state of the board
         #3) Now determine if there can be a stake, if '.' is returned [create new node if this can be done]
@@ -102,22 +109,40 @@ def construstTree(root):
         #8) Calculate the current board value based on the current player set.
         for i in range(0,numberOfNodesOnBoard):
             for j in range(0,numberOfNodesOnBoard):
-                boardStateOfParent = copy.deepcopy(parent.boardState)
-                boardState = parent.checkTheBoardState(i,j)
+                boardStateOfParent = copy.deepcopy(top.boardState)
+                boardState = top.checkTheBoardState(i,j)
                 if boardState == dotPresentInBoard:
                     #Create a new node with the board state of the parent
-                    child = node(boardStateOfParent,parent,depth,currentPlayer)
+                    child = node(boardStateOfParent,top,top.depth+1,"X" if "O" == top.player else "O")
                     #Set the stake in the board state
-                    child.setValueInBoardState(player,i,j)
+                    child.setValueInBoardState("X" if "O" == top.player else "O",i,j)
                     #set Child to the parent
-                    parent.setChildToParent(child)
+                    top.setChildToParent(child)
                     #Calculate the value of the node
                     child.calculateValueOfNode()
                     #Set the stake parameter
                     child.setMoveType(stake)
-        
+                    #Add this child to the queue
+                    queue.append(child)
+                    print "Node : " + str(child.counter)
+                    for printing in child.boardState:
+                        print printing
+                    print "Cost : ", str(child.TotalValue) , "Player : ", child.player, "MoveType : ", child.moveType , "Depth : " , child.depth
+                    print "-----------------------"
+                #Logic for raid on board, if current player has X but the previous player is O then we can use raid for the current player
+                if boardState == xPresentInBoard and top.player == "O":
+                    #We have to check if raid can be done
+                    #We need to have 4 conditions.
+                    #1) Move up and raid
+                    #2) Move down and raid
+                    #3) Move left and raid
+                    #4) Move right and raid
+                    print "hello"
 
-    printTree(root)
+        # currentPlayer = "X" if "O" == currentPlayer else "O"
+
+
+    # printTree(root)
 
 
 
