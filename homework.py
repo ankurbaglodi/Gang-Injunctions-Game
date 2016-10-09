@@ -54,6 +54,39 @@ class node:
     def setChildToParent(self,child):
         self.children.append(child)
 
+    def checkForEligibilityOfRaid(self,i,j):
+        if (i-1 >= 0 and (self.checkTheBoardState(i-1,j) == self.player)):
+            return True
+        elif (j+1 < numberOfNodesOnBoard and (self.checkTheBoardState(i,j+1)==self.player)):
+            return True
+        elif (j-1 >= 0 and (self.checkTheBoardState(i,j-1)==self.player)):
+            return True
+        elif (i+1 < numberOfNodesOnBoard and (self.checkTheBoardState(i+1,j) == self.player)):
+            return True
+        else:
+            return False
+
+    def performRaid(self,i,j):
+        raid = False
+        if self.player == 1:
+            player = "X"
+        elif self.player == 2:
+            player = "O"
+        if (i-1 >= 0 and (self.checkTheBoardState(i-1,j) != (self.player and dotPresentInBoard))):
+            self.setValueInBoardState(player,i-1,j)
+            raid = True
+        if (j+1 < numberOfNodesOnBoard and (self.checkTheBoardState(i,j+1)!= (self.player and dotPresentInBoard))):
+            self.setValueInBoardState(player, i , j+1)
+            raid = True
+        if (j-1 >= 0 and (self.checkTheBoardState(i,j-1)!= (self.player and dotPresentInBoard))):
+            self.setValueInBoardState(player, i , j - 1)
+            raid = True
+        if (i+1 < numberOfNodesOnBoard and (self.checkTheBoardState(i+1,j) != (self.player and dotPresentInBoard))):
+            self.setValueInBoardState(player, i + 1 , j)
+            raid = True
+        return raid
+
+
 
     def calculateValueOfNode(self):
         costOfX = 0
@@ -66,7 +99,7 @@ class node:
                     costOfO += cellValues[i][j]
         self.valueOfX = costOfX
         self.valueOfO = costOfO
-        self.TotalValue = self.valueOfX - self.valueOfO if "X" == self.player else self.valueOfO - self.valueOfX
+        self.TotalValue = self.valueOfX - self.valueOfO if xPresentInBoard == self.player else self.valueOfO - self.valueOfX
 
     def setMoveType(self,moveType):
         self.moveType = moveType
@@ -112,16 +145,31 @@ def construstTree(root):
                 boardStateOfParent = copy.deepcopy(top.boardState)
                 boardState = top.checkTheBoardState(i,j)
                 if boardState == dotPresentInBoard:
+                    isEligibleForRaid = False
+                    performRaid = False
+
                     #Create a new node with the board state of the parent
-                    child = node(boardStateOfParent,top,top.depth+1,"X" if "O" == top.player else "O")
+                    child = node(boardStateOfParent,top,top.depth+1,xPresentInBoard if oPresentInBoard == top.player else oPresentInBoard)
+
                     #Set the stake in the board state
-                    child.setValueInBoardState("X" if "O" == top.player else "O",i,j)
+                    child.setValueInBoardState("X" if oPresentInBoard == top.player else "O",i,j)
+
                     #set Child to the parent
                     top.setChildToParent(child)
+
+                    #Now check if there are corresponding same in the current board of the same player
+                    isEligibleForRaid = child.checkForEligibilityOfRaid(i,j)
+
+                    #If eligible check if there are any pawns to raid of the other player and then raid them
+                    if isEligibleForRaid == True:
+                        performRaid = child.performRaid(i,j)
+
                     #Calculate the value of the node
                     child.calculateValueOfNode()
+
                     #Set the stake parameter
-                    child.setMoveType(stake)
+                    child.setMoveType(raid if True == performRaid else stake)
+
                     #Add this child to the queue
                     queue.append(child)
                     print "Node : " + str(child.counter)
@@ -130,14 +178,14 @@ def construstTree(root):
                     print "Cost : ", str(child.TotalValue) , "Player : ", child.player, "MoveType : ", child.moveType , "Depth : " , child.depth
                     print "-----------------------"
                 #Logic for raid on board, if current player has X but the previous player is O then we can use raid for the current player
-                if boardState == xPresentInBoard and top.player == "O":
-                    #We have to check if raid can be done
-                    #We need to have 4 conditions.
-                    #1) Move up and raid
-                    #2) Move down and raid
-                    #3) Move left and raid
-                    #4) Move right and raid
-                    print "hello"
+                # if boardState == xPresentInBoard and top.player == "O":
+                #     #We have to check if raid can be done
+                #     #We need to have 4 conditions.
+                #     #1) Move up and raid
+                #     #2) Move down and raid
+                #     #3) Move left and raid
+                #     #4) Move right and raid
+                #     print "hello"
 
         # currentPlayer = "X" if "O" == currentPlayer else "O"
 
@@ -188,7 +236,9 @@ if __name__ == "__main__":
         tempList = []
         [tempList.append(j) for j in readFileList[i]]
         tempBoardState.append(list(tempList))
-    root = node(tempBoardState,None,0,None)
+    root = node(tempBoardState,None,0,oPresentInBoard if str(readFileList[2]) == "X" else xPresentInBoard)
+
+
 
     depthOfPlay = int(readFileList[3])
     player = readFileList[2]
