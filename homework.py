@@ -20,6 +20,7 @@ xPresentInBoard = 1
 oPresentInBoard = 2
 stake = 1
 raid = 2
+asciiOfA = ord("A")
 
 
 class node:
@@ -35,6 +36,7 @@ class node:
         self.moveType = None
         self.player = player
         self.TotalValue = 0
+        self.pawnPlaced = None
         counter += 1
 
     def addChild (self,child):
@@ -104,6 +106,9 @@ class node:
     def setMoveType(self,moveType):
         self.moveType = moveType
 
+    def setThePlaceWhereThePawnIsPlaced(self, location):
+        self.pawnPlaced = location
+
 
 
 def readFile():
@@ -170,12 +175,16 @@ def construstTree(root):
                     #Set the stake parameter
                     child.setMoveType(raid if True == performRaid else stake)
 
+                    #Placement of pawn
+                    child  .setThePlaceWhereThePawnIsPlaced(chr(asciiOfA + j) + str(i+1))
+
                     #Add this child to the queue
                     queue.append(child)
                     print "Node : " + str(child.counter)
                     for printing in child.boardState:
                         print printing
-                    print "Cost : ", str(child.TotalValue) , "Player : ", child.player, "MoveType : ", child.moveType , "Depth : " , child.depth
+                    print "Cost : ", str(child.TotalValue) , "Player : ", child.player, "MoveType : ", child.moveType , "Depth : " , child.depth ,\
+                        "Pawn : " + child.pawnPlaced
                     print "-----------------------"
                 #Logic for raid on board, if current player has X but the previous player is O then we can use raid for the current player
                 # if boardState == xPresentInBoard and top.player == "O":
@@ -216,7 +225,27 @@ def printTree(head):
 
 def minimax():
     construstTree (root)
+    iteratorRoot = copy.deepcopy(root)
+    value = []
+    for childIterator in iteratorRoot.children:
+        value.append(miniMaxValue(childIterator))
 
+def miniMaxValue(root):
+    if depthOfPlay == root.depth and len(root.children) == 0:
+        return root
+    elif root.player == player:
+        # print "Return the Highest Value"
+        childToSend = root.children[0]
+        for i in range(1,len(root.children)):
+            childToSend = root.children[i] if root.children[i].TotalValue > childToSend.TotalValue else childToSend
+        return miniMaxValue(childToSend)
+
+    else:
+        # print "Return the lowest value"
+        childToSend = root.children[0]
+        for i in range(1,len(root.children)):
+            childToSend = root.children[i] if root.children[i].TotalValue < childToSend.TotalValue else childToSend
+        return miniMaxValue(childToSend)
 if __name__ == "__main__":
 
     #Read file from input.txt
