@@ -89,6 +89,25 @@ class node:
             raid = True
         return raid
 
+    def performRaid2(self,i,j):
+        raid = False
+        if self.player == 1:
+            player = "X"
+        if self.player == 2:
+            player = "O"
+        if (i-1 >= 0 and not (self.checkTheBoardState(i-1,j) == (self.player or dotPresentInBoard))):
+            self.setValueInBoardState(player,i-1,j)
+            raid = True
+        if (j+1 < numberOfNodesOnBoard and not (self.checkTheBoardState(i,j+1) == (self.player or dotPresentInBoard))):
+            self.setValueInBoardState(player, i, j + 1)
+            raid = True
+        if (j - 1 >= 0 and not (self.checkTheBoardState(i, j - 1) == (self.player or dotPresentInBoard))):
+            self.setValueInBoardState(player, i, j - 1)
+            raid = True
+        if (i + 1 < numberOfNodesOnBoard and not (self.checkTheBoardState(i + 1, j) == (self.player or dotPresentInBoard))):
+            self.setValueInBoardState(player, i + 1, j)
+            raid = True
+        return raid
 
 
     def calculateValueOfNode(self):
@@ -171,7 +190,7 @@ def construstTree(root):
 
                     #If eligible check if there are any pawns to raid of the other player and then raid them
                     if isEligibleForRaid == True:
-                        performRaid = child.performRaid(i,j)
+                        performRaid = child.performRaid2(i,j)
 
                     #Calculate the value of the node
                     child.calculateValueOfNode()
@@ -229,7 +248,9 @@ def minimax():
     selectedNode = value[0]
     # if selectedNode.player == playerConstantValue:
     for i in range(1, len(value)):
-        selectedNode = value[i] if value[i].TotalValue > selectedNode.TotalValue else selectedNode
+        selectedNode = value[i] if value[i].TotalValue > selectedNode.TotalValue or \
+                                   (value[i].moveType == 1 and selectedNode.moveType == 2 and\
+                                    value[i].TotalValue == selectedNode.TotalValue) else selectedNode
 
     print "#########################################################"
     print selectedNode
@@ -289,6 +310,7 @@ def miniMaxValue(root):
         return miniMaxValue(childToSend)
 
 def buildChildrenForOneLevel(root):
+    depth = root.depth+1
     parent = (root)
     currentPlayer = player
     queue = []
@@ -296,7 +318,7 @@ def buildChildrenForOneLevel(root):
     while len(queue) != 0:
         top = queue[0]
         queue.pop(0)
-        if top.depth >= 1:
+        if top.depth >= depth:
             break
         for i in range(0, numberOfNodesOnBoard):
             for j in range(0, numberOfNodesOnBoard):
@@ -322,7 +344,7 @@ def buildChildrenForOneLevel(root):
 
                     # If eligible check if there are any pawns to raid of the other player and then raid them
                     if isEligibleForRaid == True:
-                        performRaid = child.performRaid(i, j)
+                        performRaid = child.performRaid2(i, j)
 
                     # Calculate the value of the node
                     child.calculateValueOfNode()
@@ -336,22 +358,18 @@ def buildChildrenForOneLevel(root):
                     # Add this child to the queue
                     queue.append(child)
 
-                    # print "Node : " + str(child.counter)
-                    # for printing in child.boardState:
-                    #     print printing
-                    # print "Cost : ", str(
-                    #     child.TotalValue), "Player : ", child.player, "MoveType : ", child.moveType, "Depth : ", child.depth, \
-                    #     "Pawn : " + child.pawnPlaced, "Parent : ", child.parent.counter
-                    # print "-----------------------"
-
 def alphaBeta():
 
     buildChildrenForOneLevel(root)
     #Run algorithm from here
-    value = alphaBetaMaxValue(root.children[0], float("-inf"), float("inf"))
-    for i in range(11,len(root.children)):
-        temp = alphaBetaMaxValue(root.children[i],float("-inf"),float("inf"))
+    value = alphaBetaMinValue(root.children[0], float("-inf"), float("inf"))
+    for i in range(1,len(root.children)):
+        temp = alphaBetaMinValue(root.children[i],float("-inf"),float("inf"))
         value = temp if temp.TotalValue > value.TotalValue else value
+
+    value = root.children[0]
+    for i in range(1,len(root.children)):
+        value = root.children[i] if root.children[i].TotalValue > value.TotalValue else value
 
     print "#########################################################"
     print value
@@ -367,32 +385,169 @@ def alphaBeta():
     print "#######################################################"
 
 def alphaBetaMaxValue(root,alpha,beta):
-    if len(root.children) == 0 or root.depth == depthOfPlay:
+    if root.depth == depthOfPlay:
         return root
-    value = float("-inf")
     buildChildrenForOneLevel(root)
     value = alphaBetaMinValue(root.children[0],alpha,beta)
     for i in range(1,len(root.children)):
-        temp = alphaBetaMaxValue(root.children[i],alpha,beta)
+        temp = alphaBetaMinValue(root.children[i],alpha,beta)
+        # print "Child Counter : ", temp.counter
         value = temp if temp.TotalValue > value.TotalValue else value
         if value.TotalValue >= beta:
             return value
-        alpha = value.Totalvalue if value.Totalvalue > alpha else alpha
+        alpha = value.TotalValue if value.TotalValue > alpha else alpha
+    root.TotalValue = alpha
     return value
 
 def alphaBetaMinValue(root,alpha,beta):
-    if len(root.children) == 0 or root.depth == depthOfPlay:
+    if root.depth == depthOfPlay:
         return root
-    value = float("inf")
+    # value = float("inf")
     buildChildrenForOneLevel(root)
     value = alphaBetaMaxValue(root.children[0],alpha,beta)
     for i in range(1,len(root.children)):
         temp = alphaBetaMaxValue(root.children[i],alpha,beta)
+        # print "Child Counter : ", temp.counter
         value = temp if temp.TotalValue < value.TotalValue else value
         if value.TotalValue <= alpha:
             return value
         beta = value.TotalValue if value.TotalValue < beta else beta
+    root.TotalValue = beta
     return value
+
+def alphaBetaMaxValue2(root,alpha,beta):
+    value = None
+    if root.depth == depthOfPlay:
+        return root
+
+    depth = root.depth + 1
+    parent = (root)
+    currentPlayer = player
+    queue = []
+    queue.append(parent)
+    while len(queue) != 0:
+        top = queue[0]
+        queue.pop(0)
+        if top.depth >= depth:
+            break
+        for i in range(0, numberOfNodesOnBoard):
+            for j in range(0, numberOfNodesOnBoard):
+                boardStateOfParent = copy.deepcopy(top.boardState)
+                if i>=numberOfNodesOnBoard or j>=numberOfNodesOnBoard:
+                    print "break"
+                boardState = top.checkTheBoardState(i, j)
+                if boardState == dotPresentInBoard:
+                    isEligibleForRaid = False
+                    performRaid = False
+
+                    # Create a new node with the board state of the parent
+                    child = node(boardStateOfParent, top, top.depth + 1,
+                                 xPresentInBoard if oPresentInBoard == top.player \
+                                     else oPresentInBoard)
+
+                    # Set the stake in the board state
+                    child.setValueInBoardState("X" if oPresentInBoard == top.player else "O", i, j)
+
+                    # set Child to the parent
+                    top.setChildToParent(child)
+
+                    # Now check if there are corresponding same in the current board of the same player
+                    isEligibleForRaid = child.checkForEligibilityOfRaid(i, j)
+
+                    # If eligible check if there are any pawns to raid of the other player and then raid them
+                    if isEligibleForRaid == True:
+                        performRaid = child.performRaid2(i, j)
+
+                    # Calculate the value of the node
+                    child.calculateValueOfNode()
+
+                    # Set the stake parameter
+                    child.setMoveType(raid if True == performRaid else stake)
+
+                    # Placement of pawn
+                    child.setThePlaceWhereThePawnIsPlaced(chr(asciiOfA + j) + str(i + 1))
+
+                    # Add this child to the queue
+                    queue.append(child)
+
+                    temp = alphaBetaMinValue2(child, alpha, beta)
+                    if value != None:
+                        value = temp if temp.TotalValue > value.TotalValue else value
+                    else:
+                        value = temp
+                    if value.TotalValue >= beta:
+                        return value
+                    alpha = value.TotalValue if value.TotalValue > alpha else alpha
+                    print "Child Counter : " , child.counter
+    root.TotalValue = alpha
+    return value
+
+
+
+def alphaBetaMinValue2(root,alpha,beta):
+    value = None
+    if root.depth == depthOfPlay:
+        return root
+    depth = root.depth + 1
+    parent = (root)
+    currentPlayer = player
+    queue = []
+    queue.append(parent)
+    while len(queue) != 0:
+        top = queue[0]
+        queue.pop(0)
+        if top.depth >= depth:
+            break
+        for i in range(0, numberOfNodesOnBoard):
+            for j in range(0, numberOfNodesOnBoard):
+                boardStateOfParent = copy.deepcopy(top.boardState)
+                boardState = top.checkTheBoardState(i, j)
+                if boardState == dotPresentInBoard:
+                    isEligibleForRaid = False
+                    performRaid = False
+
+                    # Create a new node with the board state of the parent
+                    child = node(boardStateOfParent, top, top.depth + 1,
+                                 xPresentInBoard if oPresentInBoard == top.player \
+                                     else oPresentInBoard)
+
+                    # Set the stake in the board state
+                    child.setValueInBoardState("X" if oPresentInBoard == top.player else "O", i, j)
+
+                    # set Child to the parent
+                    top.setChildToParent(child)
+
+                    # Now check if there are corresponding same in the current board of the same player
+                    isEligibleForRaid = child.checkForEligibilityOfRaid(i, j)
+
+                    # If eligible check if there are any pawns to raid of the other player and then raid them
+                    if isEligibleForRaid == True:
+                        performRaid = child.performRaid2(i, j)
+
+                    # Calculate the value of the node
+                    child.calculateValueOfNode()
+
+                    # Set the stake parameter
+                    child.setMoveType(raid if True == performRaid else stake)
+
+                    # Placement of pawn
+                    child.setThePlaceWhereThePawnIsPlaced(chr(asciiOfA + j) + str(i + 1))
+
+                    # Add this child to the queue
+                    queue.append(child)
+
+                    temp = alphaBetaMinValue2(child, alpha, beta)
+                    if value != None:
+                        value = temp if temp.TotalValue < value.TotalValue else value
+                    else:
+                        value = temp
+                    if value.TotalValue <= alpha:
+                        return value
+                    beta = value.TotalValue if value.TotalValue < beta else beta
+    root.TotalValue = beta
+    return value
+
+
 
 
 
