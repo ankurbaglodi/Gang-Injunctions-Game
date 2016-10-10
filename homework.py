@@ -91,22 +91,33 @@ class node:
 
     def performRaid2(self,i,j):
         raid = False
-        if self.player == 1:
+        if  self.player == 1:
             player = "X"
-        if self.player == 2:
+        if  self.player == 2:
             player = "O"
-        if (i-1 >= 0 and not (self.checkTheBoardState(i-1,j) == (self.player or dotPresentInBoard))):
-            self.setValueInBoardState(player,i-1,j)
-            raid = True
-        if (j+1 < numberOfNodesOnBoard and not (self.checkTheBoardState(i,j+1) == (self.player or dotPresentInBoard))):
-            self.setValueInBoardState(player, i, j + 1)
-            raid = True
-        if (j - 1 >= 0 and not (self.checkTheBoardState(i, j - 1) == (self.player or dotPresentInBoard))):
-            self.setValueInBoardState(player, i, j - 1)
-            raid = True
-        if (i + 1 < numberOfNodesOnBoard and not (self.checkTheBoardState(i + 1, j) == (self.player or dotPresentInBoard))):
-            self.setValueInBoardState(player, i + 1, j)
-            raid = True
+        if  i-1 >= 0:
+            temp = self.checkTheBoardState(i-1,j)
+            if  not ((temp == self.player) or (temp == dotPresentInBoard)):
+                self.setValueInBoardState(player,i-1,j)
+                raid = True
+
+        if j+1 < numberOfNodesOnBoard :
+            temp = self.checkTheBoardState(i,j+1)
+            if  not ((temp == self.player) or (temp == dotPresentInBoard)):
+                self.setValueInBoardState(player, i, j + 1)
+                raid = True
+
+        if  j - 1 >= 0:
+            temp = self.checkTheBoardState(i, j - 1)
+            if not ((temp == self.player) or (temp == dotPresentInBoard)):
+                self.setValueInBoardState(player, i, j - 1)
+                raid = True
+
+        if  i + 1 < numberOfNodesOnBoard:
+            temp = self.checkTheBoardState(i + 1, j)
+            if  not ((temp == self.player) or (temp == dotPresentInBoard)):
+                self.setValueInBoardState(player, i + 1, j)
+                raid = True
         return raid
 
 
@@ -178,6 +189,9 @@ def construstTree(root):
                     child = node(boardStateOfParent,top,top.depth+1,xPresentInBoard if oPresentInBoard == top.player \
                     else oPresentInBoard)
 
+                    #Set the value of the board state of the parent to null
+                    boardStateOfParent = None
+
                     #Set the stake in the board state
                     child.setValueInBoardState("X" if oPresentInBoard == top.player else "O",i,j)
 
@@ -214,7 +228,6 @@ def construstTree(root):
     print "#####################################################"
     # printTree(root)
 
-
 def printTree(head):
     headRoot = copy.deepcopy(head)
     queue = []
@@ -234,10 +247,6 @@ def printTree(head):
         for temp in top.children:
             tempQ.append(temp)
         queue = tempQ + queue
-
-
-
-
 
 def minimax():
     construstTree (root)
@@ -286,8 +295,6 @@ def miniMaxValue2(root,maximize):
         root.TotalValue = v.TotalValue
         return root
 
-
-
 def miniMaxValue(root):
 
     if depthOfPlay == root.depth and len(root.children) == 0:
@@ -333,6 +340,9 @@ def buildChildrenForOneLevel(root):
                                  xPresentInBoard if oPresentInBoard == top.player \
                                      else oPresentInBoard)
 
+                    #Set the board state to none
+                    boardStateOfParent = None
+
                     # Set the stake in the board state
                     child.setValueInBoardState("X" if oPresentInBoard == top.player else "O", i, j)
 
@@ -366,6 +376,8 @@ def alphaBeta():
     for i in range(1,len(root.children)):
         temp = alphaBetaMinValue(root.children[i],float("-inf"),float("inf"))
         value = temp if temp.TotalValue > value.TotalValue else value
+        temp = None
+        value.children = None
 
     value = root.children[0]
     for i in range(1,len(root.children)):
@@ -482,8 +494,6 @@ def alphaBetaMaxValue2(root,alpha,beta):
     root.TotalValue = alpha
     return value
 
-
-
 def alphaBetaMinValue2(root,alpha,beta):
     value = None
     if root.depth == depthOfPlay:
@@ -546,11 +556,6 @@ def alphaBetaMinValue2(root,alpha,beta):
                     beta = value.TotalValue if value.TotalValue < beta else beta
     root.TotalValue = beta
     return value
-
-
-
-
-
 
 if __name__ == "__main__":
 
