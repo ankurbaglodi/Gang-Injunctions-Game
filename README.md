@@ -1,2 +1,2 @@
 # Gang-Injunctions-Game
-AI agent to play gang injunctions game
+Building an Game playing agent which calculates the best move for the Game
