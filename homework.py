@@ -1,5 +1,5 @@
 # coding=utf-8
-import os,sys,copy
+import os,sys,copy, datetime , time
 """
 <N>
 <MODE>
@@ -14,6 +14,7 @@ depthOfPlay = 0
 cellValues = []
 counter = 0
 player = None
+playerConstantValue = None
 root = None
 dotPresentInBoard = 0
 xPresentInBoard = 1
@@ -101,7 +102,8 @@ class node:
                     costOfO += cellValues[i][j]
         self.valueOfX = costOfX
         self.valueOfO = costOfO
-        self.TotalValue = self.valueOfX - self.valueOfO if xPresentInBoard == self.player else self.valueOfO - self.valueOfX
+        self.TotalValue = self.valueOfX - self.valueOfO if playerConstantValue == xPresentInBoard else self.valueOfO - self.valueOfX
+        # self.TotalValue = self.valueOfX - self.valueOfO if xPresentInBoard == self.player else self.valueOfO - self.valueOfX
 
     def setMoveType(self,moveType):
         self.moveType = moveType
@@ -154,13 +156,15 @@ def construstTree(root):
                     performRaid = False
 
                     #Create a new node with the board state of the parent
-                    child = node(boardStateOfParent,top,top.depth+1,xPresentInBoard if oPresentInBoard == top.player else oPresentInBoard)
+                    child = node(boardStateOfParent,top,top.depth+1,xPresentInBoard if oPresentInBoard == top.player \
+                    else oPresentInBoard)
 
                     #Set the stake in the board state
                     child.setValueInBoardState("X" if oPresentInBoard == top.player else "O",i,j)
 
                     #set Child to the parent
                     top.setChildToParent(child)
+
 
                     #Now check if there are corresponding same in the current board of the same player
                     isEligibleForRaid = child.checkForEligibilityOfRaid(i,j)
@@ -176,31 +180,20 @@ def construstTree(root):
                     child.setMoveType(raid if True == performRaid else stake)
 
                     #Placement of pawn
-                    child  .setThePlaceWhereThePawnIsPlaced(chr(asciiOfA + j) + str(i+1))
+                    child.setThePlaceWhereThePawnIsPlaced(chr(asciiOfA + j) + str(i+1))
 
                     #Add this child to the queue
                     queue.append(child)
-                    print "Node : " + str(child.counter)
-                    for printing in child.boardState:
-                        print printing
-                    print "Cost : ", str(child.TotalValue) , "Player : ", child.player, "MoveType : ", child.moveType , "Depth : " , child.depth ,\
-                        "Pawn : " + child.pawnPlaced
-                    print "-----------------------"
-                #Logic for raid on board, if current player has X but the previous player is O then we can use raid for the current player
-                # if boardState == xPresentInBoard and top.player == "O":
-                #     #We have to check if raid can be done
-                #     #We need to have 4 conditions.
-                #     #1) Move up and raid
-                #     #2) Move down and raid
-                #     #3) Move left and raid
-                #     #4) Move right and raid
-                #     print "hello"
-
-        # currentPlayer = "X" if "O" == currentPlayer else "O"
-
-
+                    #
+                    # print "Node : " + str(child.counter)
+                    # for printing in child.boardState:
+                    #     print printing
+                    # print "Cost : ", str(child.TotalValue) , "Player : ", child.player, "MoveType : ", child.moveType , "Depth : " , child.depth ,\
+                    #     "Pawn : " + child.pawnPlaced , "Parent : " , child.parent.counter
+                    # print "-----------------------"
+                    # print child.counter
+    print "#####################################################"
     # printTree(root)
-
 
 
 def printTree(head):
@@ -208,16 +201,20 @@ def printTree(head):
     queue = []
     queue.append(headRoot)
     while len(queue) != 0:
+        tempQ = []
         top = queue[0]
         queue.pop(0)
         print "Node : " + str(top.counter)
-        for i in top.boardState:
-            print i
-        print "Cost : " , top.TotalValue , "Player : " , top.player , "MoveType : " , top.moveType
+        for printing in top.boardState:
+            print printing
+        print "Cost : ", str(
+            top.TotalValue), "Player : ", top.player, "MoveType : ", top.moveType, "Depth : ", top.depth, \
+            "Pawn : " + "..." if top.pawnPlaced == None else top.pawnPlaced , "Parent : ", "..." if top.parent == None\
+            else top.parent.counter
         print "-----------------------"
-
         for temp in top.children:
-            queue.append(temp)
+            tempQ.append(temp)
+        queue = tempQ + queue
 
 
 
@@ -228,16 +225,59 @@ def minimax():
     iteratorRoot = copy.deepcopy(root)
     value = []
     for childIterator in iteratorRoot.children:
-        value.append(miniMaxValue(childIterator))
+        value.append(miniMaxValue2(childIterator,False))
+    selectedNode = value[0]
+    # if selectedNode.player == playerConstantValue:
+    for i in range(1, len(value)):
+        selectedNode = value[i] if value[i].TotalValue > selectedNode.TotalValue else selectedNode
+
+    print "#########################################################"
+    print selectedNode
+
+    for printing in selectedNode.boardState:
+        print printing
+
+    print "Cost : ", str(selectedNode.TotalValue), "Player : ", selectedNode.player, "MoveType : ", \
+        selectedNode.moveType, "Depth : ",\
+        selectedNode.depth, \
+        "Pawn : " + selectedNode.pawnPlaced , "Move Type : " + "Raid" if selectedNode.moveType == 2 else "Stake"
+
+    print "#######################################################"
+    # printTree(root)
+
+def miniMaxValue2(root,maximize):
+
+    if len(root.children) == 0:
+        return  root
+
+    elif maximize:
+        v = miniMaxValue2(root.children[0],False)
+        for i in range(1,len(root.children)):
+            temp = miniMaxValue2(root.children[i],False)
+            v = temp if temp.TotalValue > v.TotalValue else v
+        root.TotalValue = v.TotalValue
+        return root
+    else:
+        v = miniMaxValue2(root.children[0],True)
+        for i in range(1,len(root.children)):
+            temp = miniMaxValue2(root.children[i],True)
+            v = temp if temp.TotalValue < v.TotalValue else v
+        root.TotalValue = v.TotalValue
+        return root
+
+
 
 def miniMaxValue(root):
+
     if depthOfPlay == root.depth and len(root.children) == 0:
         return root
-    elif root.player == player:
+
+    elif root.player == playerConstantValue:
         # print "Return the Highest Value"
         childToSend = root.children[0]
         for i in range(1,len(root.children)):
             childToSend = root.children[i] if root.children[i].TotalValue > childToSend.TotalValue else childToSend
+        # root.TotalValue = childToSend.TotalValue
         return miniMaxValue(childToSend)
 
     else:
@@ -245,7 +285,118 @@ def miniMaxValue(root):
         childToSend = root.children[0]
         for i in range(1,len(root.children)):
             childToSend = root.children[i] if root.children[i].TotalValue < childToSend.TotalValue else childToSend
+        # root.TotalValue = childToSend.TotalValue
         return miniMaxValue(childToSend)
+
+def buildChildrenForOneLevel(root):
+    parent = (root)
+    currentPlayer = player
+    queue = []
+    queue.append(parent)
+    while len(queue) != 0:
+        top = queue[0]
+        queue.pop(0)
+        if top.depth >= 1:
+            break
+        for i in range(0, numberOfNodesOnBoard):
+            for j in range(0, numberOfNodesOnBoard):
+                boardStateOfParent = copy.deepcopy(top.boardState)
+                boardState = top.checkTheBoardState(i, j)
+                if boardState == dotPresentInBoard:
+                    isEligibleForRaid = False
+                    performRaid = False
+
+                    # Create a new node with the board state of the parent
+                    child = node(boardStateOfParent, top, top.depth + 1,
+                                 xPresentInBoard if oPresentInBoard == top.player \
+                                     else oPresentInBoard)
+
+                    # Set the stake in the board state
+                    child.setValueInBoardState("X" if oPresentInBoard == top.player else "O", i, j)
+
+                    # set Child to the parent
+                    top.setChildToParent(child)
+
+                    # Now check if there are corresponding same in the current board of the same player
+                    isEligibleForRaid = child.checkForEligibilityOfRaid(i, j)
+
+                    # If eligible check if there are any pawns to raid of the other player and then raid them
+                    if isEligibleForRaid == True:
+                        performRaid = child.performRaid(i, j)
+
+                    # Calculate the value of the node
+                    child.calculateValueOfNode()
+
+                    # Set the stake parameter
+                    child.setMoveType(raid if True == performRaid else stake)
+
+                    # Placement of pawn
+                    child.setThePlaceWhereThePawnIsPlaced(chr(asciiOfA + j) + str(i + 1))
+
+                    # Add this child to the queue
+                    queue.append(child)
+
+                    # print "Node : " + str(child.counter)
+                    # for printing in child.boardState:
+                    #     print printing
+                    # print "Cost : ", str(
+                    #     child.TotalValue), "Player : ", child.player, "MoveType : ", child.moveType, "Depth : ", child.depth, \
+                    #     "Pawn : " + child.pawnPlaced, "Parent : ", child.parent.counter
+                    # print "-----------------------"
+
+def alphaBeta():
+
+    buildChildrenForOneLevel(root)
+    #Run algorithm from here
+    value = alphaBetaMaxValue(root.children[0], float("-inf"), float("inf"))
+    for i in range(11,len(root.children)):
+        temp = alphaBetaMaxValue(root.children[i],float("-inf"),float("inf"))
+        value = temp if temp.TotalValue > value.TotalValue else value
+
+    print "#########################################################"
+    print value
+
+    for printing in value.boardState:
+        print printing
+
+    print "Cost : ", str(value.TotalValue), "Player : ", value.player, "MoveType : ", \
+        value.moveType, "Depth : ", \
+        value.depth, \
+        "Pawn : " + value.pawnPlaced , "Move Type : " + "Raid" if value.moveType == 2 else "Stake"
+
+    print "#######################################################"
+
+def alphaBetaMaxValue(root,alpha,beta):
+    if len(root.children) == 0 or root.depth == depthOfPlay:
+        return root
+    value = float("-inf")
+    buildChildrenForOneLevel(root)
+    value = alphaBetaMinValue(root.children[0],alpha,beta)
+    for i in range(1,len(root.children)):
+        temp = alphaBetaMaxValue(root.children[i],alpha,beta)
+        value = temp if temp.TotalValue > value.TotalValue else value
+        if value.TotalValue >= beta:
+            return value
+        alpha = value.Totalvalue if value.Totalvalue > alpha else alpha
+    return value
+
+def alphaBetaMinValue(root,alpha,beta):
+    if len(root.children) == 0 or root.depth == depthOfPlay:
+        return root
+    value = float("inf")
+    buildChildrenForOneLevel(root)
+    value = alphaBetaMaxValue(root.children[0],alpha,beta)
+    for i in range(1,len(root.children)):
+        temp = alphaBetaMaxValue(root.children[i],alpha,beta)
+        value = temp if temp.TotalValue < value.TotalValue else value
+        if value.TotalValue <= alpha:
+            return value
+        beta = value.TotalValue if value.TotalValue < beta else beta
+    return value
+
+
+
+
 if __name__ == "__main__":
 
     #Read file from input.txt
@@ -271,6 +422,12 @@ if __name__ == "__main__":
 
     depthOfPlay = int(readFileList[3])
     player = readFileList[2]
+    playerConstantValue = oPresentInBoard if player == "O" else xPresentInBoard
 
+    start = time.time()
     if readFileList[1].strip() == "MINIMAX":
         minimax()
+    if readFileList[1].strip() == "ALPHABETA":
+        alphaBeta()
+    end = time.time()
+    print end - start
