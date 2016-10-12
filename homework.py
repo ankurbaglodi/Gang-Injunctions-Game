@@ -381,7 +381,12 @@ def alphaBeta():
 
     value = root.children[0]
     for i in range(1,len(root.children)):
-        value = root.children[i] if root.children[i].TotalValue > value.TotalValue else value
+        # value = root.children[i] if root.children[i].TotalValue > value.TotalValue else value
+
+        value = root.children[i] if root.children[i].TotalValue > value.TotalValue or \
+                                    (root.children[i].TotalValue == value.TotalValue and \
+                                     root.children[i].moveType == 1 and value.moveType == 2)\
+                                    else value
 
     print "#########################################################"
     print value
