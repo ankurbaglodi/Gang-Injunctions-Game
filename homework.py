@@ -141,7 +141,33 @@ class node:
     def setThePlaceWhereThePawnIsPlaced(self, location):
         self.pawnPlaced = location
 
+def deleteOutputFile():
+    """
+    Deletes the output file in the directory
+    :return: nothing
+    """
+    if os.path.exists("output.txt"):
+        os.remove("output.txt")
+def writeFile(list):
+    """
+    Just write the file and stores the output as sent by the user
+    :return: True\False
+    """
+    try:
+        if os.path.exists("output.txt"):
+            os.remove("output.txt")
+        f = open('output.txt', 'w')
 
+        counter = 0
+        for a in list:
+                f.write(str(a) + "\n")
+                counter += 1
+    except Exception as e:
+        return False
+
+    finally:
+        f.close()
+        return True
 
 def readFile():
     """
@@ -261,19 +287,26 @@ def minimax():
                                    (value[i].moveType == 1 and selectedNode.moveType == 2 and\
                                     value[i].TotalValue == selectedNode.TotalValue) else selectedNode
 
-    print "#########################################################"
-    print selectedNode
-
+    # print "#########################################################"
+    # print selectedNode
+    #
+    # for printing in selectedNode.boardState:
+    #     print printing
+    #
+    # print "Cost : ", str(selectedNode.TotalValue), "Player : ", selectedNode.player, "MoveType : ", \
+    #     selectedNode.moveType, "Depth : ",\
+    #     selectedNode.depth, \
+    #     "Pawn : " + selectedNode.pawnPlaced , "Move Type : " + "Raid" if selectedNode.moveType == 2 else "Stake"
+    #
+    # print "#######################################################"
+    toPrintList = []
+    toPrintList.append(str(selectedNode.pawnPlaced) + " " + str("Raid" if selectedNode.moveType == 2 else "Stake"))
     for printing in selectedNode.boardState:
-        print printing
-
-    print "Cost : ", str(selectedNode.TotalValue), "Player : ", selectedNode.player, "MoveType : ", \
-        selectedNode.moveType, "Depth : ",\
-        selectedNode.depth, \
-        "Pawn : " + selectedNode.pawnPlaced , "Move Type : " + "Raid" if selectedNode.moveType == 2 else "Stake"
-
-    print "#######################################################"
-    # printTree(root)
+        tempChar = ""
+        for char in printing:
+            tempChar += char
+        toPrintList.append(str(tempChar))
+    writeFile(toPrintList)
 
 def miniMaxValue2(root,maximize):
 
@@ -388,18 +421,27 @@ def alphaBeta():
                                      root.children[i].moveType == 1 and value.moveType == 2)\
                                     else value
 
-    print "#########################################################"
-    print value
+    # print "#########################################################"
+    # print value
+    #
+    # for printing in value.boardState:
+    #     print printing
+    #
+    # print "Cost : ", str(value.TotalValue), "Player : ", value.player, "MoveType : ", \
+    #     value.moveType, "Depth : ", \
+    #     value.depth, \
+    #     "Pawn : " + value.pawnPlaced , "Move Type : " + "Raid" if value.moveType == 2 else "Stake"
+    #
+    # print "#######################################################"
 
+    toPrintList = []
+    toPrintList.append(str(value.pawnPlaced)+ " " + str("Raid" if value.moveType == 2 else "Stake"))
     for printing in value.boardState:
-        print printing
-
-    print "Cost : ", str(value.TotalValue), "Player : ", value.player, "MoveType : ", \
-        value.moveType, "Depth : ", \
-        value.depth, \
-        "Pawn : " + value.pawnPlaced , "Move Type : " + "Raid" if value.moveType == 2 else "Stake"
-
-    print "#######################################################"
+        tempChar = ""
+        for char in printing:
+            tempChar += char
+        toPrintList.append(str(tempChar))
+    writeFile(toPrintList)
 
 def alphaBetaMaxValue(root,alpha,beta):
     if root.depth == depthOfPlay:
