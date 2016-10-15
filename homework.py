@@ -183,7 +183,7 @@ def readFile():
         f.close()
         return  0
 
-def construstTree(root):
+def construstTree2(root):
     depth = 1
     parent = (root)
     currentPlayer = player
@@ -243,6 +243,105 @@ def construstTree(root):
 
                     #Add this child to the queue
                     queue.append(child)
+                    #
+                    # print "Node : " + str(child.counter)
+                    # for printing in child.boardState:
+                    #     print printing
+                    # print "Cost : ", str(child.TotalValue) , "Player : ", child.player, "MoveType : ", child.moveType , "Depth : " , child.depth ,\
+                    #     "Pawn : " + child.pawnPlaced , "Parent : " , child.parent.counter
+                    # print "-----------------------"
+                    # print child.counter
+    print "#####################################################"
+    # printTree(root)
+
+def construstTree(root):
+    depth = 1
+    parent = (root)
+    currentPlayer = player
+    queue = []
+    queue.append(parent)
+    # for i in range (depth,depthOfPlay+1):
+    while len(queue) != 0:
+        top = queue[0]
+        queue.pop(0)
+        if top.depth >= depthOfPlay:
+            break
+        #1) Parse through the current board
+        #2) Check the current state of the board
+        #3) Now determine if there can be a stake, if '.' is returned [create new node if this can be done]
+        #4) Now determine if raid can be done, if current player is playing the game [create new node]
+        #5) If other player is present in the node then do nothing.
+        #6) After creating the node calculate the value of the board, by populating the value of the X player and value of the Y player
+        #7) Set the appropriate board player detail
+        #8) Calculate the current board value based on the current player set.
+        for i in range(0,numberOfNodesOnBoard):
+            for j in range(0,numberOfNodesOnBoard):
+                boardStateOfParent = copy.deepcopy(top.boardState)
+                boardState = top.checkTheBoardState(i,j)
+                if boardState == dotPresentInBoard:
+                    isEligibleForRaid = False
+                    performRaid = False
+                    needToPerformStake = False
+
+                    #Create a new node with the board state of the parent
+                    child = node(boardStateOfParent,top,top.depth+1,xPresentInBoard if oPresentInBoard == top.player \
+                    else oPresentInBoard)
+
+                    # #Set the value of the board state of the parent to null
+                    # boardStateOfParent = None
+
+                    #Set the stake in the board state
+                    child.setValueInBoardState("X" if oPresentInBoard == top.player else "O",i,j)
+
+                    #set Child to the parent
+                    top.setChildToParent(child)
+
+
+                    #Now check if there are corresponding same in the current board of the same player
+                    isEligibleForRaid = child.checkForEligibilityOfRaid(i,j)
+
+                    #If eligible check if there are any pawns to raid of the other player and then raid them
+                    if isEligibleForRaid == True:
+                        performRaid = child.performRaid2(i,j)
+                        needToPerformStake = True
+
+                    #Calculate the value of the node
+                    child.calculateValueOfNode()
+
+                    #Set the stake parameter
+                    child.setMoveType(raid if True == performRaid else stake)
+
+                    #Placement of pawn
+                    child.setThePlaceWhereThePawnIsPlaced(chr(asciiOfA + j) + str(i+1))
+
+                    #Add this child to the queue
+                    queue.append(child)
+
+                    #If need to perform stake is true we need to add one more child to the queue
+                    if needToPerformStake == True and isEligibleForRaid == False:
+                        child = node(boardStateOfParent, top, top.depth + 1,
+                                     xPresentInBoard if oPresentInBoard == top.player \
+                                         else oPresentInBoard)
+
+                        # Set the stake in the board state
+                        child.setValueInBoardState("X" if oPresentInBoard == top.player else "O", i, j)
+
+                        # set Child to the parent
+                        top.setChildToParent(child)
+
+                        # Calculate the value of the node
+                        child.calculateValueOfNode()
+
+                        # Set the stake parameter
+                        child.setMoveType(stake)
+
+                        # Placement of pawn
+                        child.setThePlaceWhereThePawnIsPlaced(chr(asciiOfA + j) + str(i + 1))
+
+                        # Add this child to the queue
+                        queue.append(child)
+
+                        boardState = None
                     #
                     # print "Node : " + str(child.counter)
                     # for printing in child.boardState:
@@ -367,14 +466,15 @@ def buildChildrenForOneLevel(root):
                 if boardState == dotPresentInBoard:
                     isEligibleForRaid = False
                     performRaid = False
+                    needToPerformStake = False
 
                     # Create a new node with the board state of the parent
                     child = node(boardStateOfParent, top, top.depth + 1,
                                  xPresentInBoard if oPresentInBoard == top.player \
                                      else oPresentInBoard)
 
-                    #Set the board state to none
-                    boardStateOfParent = None
+                    # #Set the board state to none
+                    # boardStateOfParent = None
 
                     # Set the stake in the board state
                     child.setValueInBoardState("X" if oPresentInBoard == top.player else "O", i, j)
@@ -388,6 +488,7 @@ def buildChildrenForOneLevel(root):
                     # If eligible check if there are any pawns to raid of the other player and then raid them
                     if isEligibleForRaid == True:
                         performRaid = child.performRaid2(i, j)
+                        needToPerformStake = True
 
                     # Calculate the value of the node
                     child.calculateValueOfNode()
@@ -400,6 +501,32 @@ def buildChildrenForOneLevel(root):
 
                     # Add this child to the queue
                     queue.append(child)
+
+                    # If need to perform stake is true we need to add one more child to the queue
+                    if needToPerformStake == True and isEligibleForRaid == False:
+                        child = node(boardStateOfParent, top, top.depth + 1,
+                                     xPresentInBoard if oPresentInBoard == top.player \
+                                         else oPresentInBoard)
+
+                        # Set the stake in the board state
+                        child.setValueInBoardState("X" if oPresentInBoard == top.player else "O", i, j)
+
+                        # set Child to the parent
+                        top.setChildToParent(child)
+
+                        # Calculate the value of the node
+                        child.calculateValueOfNode()
+
+                        # Set the stake parameter
+                        child.setMoveType(stake)
+
+                        # Placement of pawn
+                        child.setThePlaceWhereThePawnIsPlaced(chr(asciiOfA + j) + str(i + 1))
+
+                        # Add this child to the queue
+                        queue.append(child)
+
+                        boardState = None
 
 def alphaBeta():
 
